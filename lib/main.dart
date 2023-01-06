@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:mynotes/firebase_options.dart';
+import 'package:mynotes/view/auth/register.dart';
+import 'package:mynotes/view/auth/login.dart';
+import 'package:mynotes/view/auth/verify_email.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -10,80 +13,46 @@ void main() {
       primarySwatch: Colors.cyan,
     ),
     home: const HomePage(),
+    routes: {
+      '/login': (context) => const LoginView(),
+      '/register': (context) => const RegisterView(),
+      '/verifyEmail': (context) => const VerifyEmailView(),
+    },
   ));
 }
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ),
+      builder: (context, snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.done:
+            final user = FirebaseAuth.instance.currentUser;
+            if (user == null) return const LoginView();
+            if (!user.emailVerified) return const VerifyEmailView();
+            return const Text('User verified!!!');
+          default:
+            return const CircularProgressView();
+        }
+      },
+    );
+  }
 }
 
-class _HomePageState extends State<HomePage> {
-  late final TextEditingController _email;
-  late final TextEditingController _password;
-
-  @override
-  void initState() {
-    _email = TextEditingController();
-    _password = TextEditingController();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _email.dispose();
-    _password.dispose();
-    super.dispose();
-  }
+class CircularProgressView extends StatelessWidget {
+  const CircularProgressView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text('Register'),
-        ),
-        body: FutureBuilder(
-          future: Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform,
-          ),
-          builder: (context, snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.done:
-                return Column(
-                  children: [
-                    TextField(
-                      controller: _email,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(hintText: 'email'),
-                    ),
-                    TextField(
-                      controller: _password,
-                      obscureText: true,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      decoration: const InputDecoration(hintText: 'password'),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        final email = _email.text;
-                        final password = _password.text;
-                        final userCredentials = await FirebaseAuth.instance
-                            .createUserWithEmailAndPassword(
-                                email: email, password: password);
-                        print(userCredentials);
-                      },
-                      child: const Text('Register'),
-                    ),
-                  ],
-                );
-              default:
-                return const Text('Loading...');
-            }
-          },
-        ));
+    return const Scaffold(
+        body: Center(
+      child: CircularProgressIndicator(),
+    ));
   }
 }
