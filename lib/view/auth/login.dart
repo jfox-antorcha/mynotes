@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mynotes/constants/routes.dart';
+import 'package:mynotes/services/auth/auth_exceptions.dart';
+import 'package:mynotes/services/auth/auth_service.dart';
+import 'package:mynotes/utils/show_error_dialog.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -51,29 +54,39 @@ class _LoginViewState extends State<LoginView> {
               final email = _email.text;
               final password = _password.text;
               try {
-                final userCredentials = await FirebaseAuth.instance
-                    .signInWithEmailAndPassword(
-                        email: email, password: password);
-                print(userCredentials);
-              } on FirebaseAuthException catch (e) {
-                switch (e.code) {
-                  case 'user-not-found':
-                    print('User not found!!!');
-                    break;
-
-                  case 'wrong-password':
-                    print('Wrong password!!!');
-                    break;
-                  default:
-                    print('something worng happend');
-                    break;
+                final user = await AuthService.firebase().logIn(
+                  email: email,
+                  password: password,
+                );
+                if (user.isEmailVerified == false) {
+                  // ignore: use_build_context_synchronously
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    verifyEmailRoute,
+                    (_) => false,
+                  );
                 }
+                // ignore: use_build_context_synchronously
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  notesRoute,
+                  (route) => false,
+                );
+              } on UserNotFoundAuthException {
+                await showErrorMessage(context, 'User not found!');
+              } on WrongCredentialsAuthException {
+                await showErrorMessage(context, 'Wrong password!!!');
+              } on GenericAuthException {
+                await showErrorMessage(context, 'Something worng happend!');
               }
             },
             child: const Text('Login'),
           ),
           TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  registerRoute,
+                  (route) => false,
+                );
+              },
               child: const Text('Not register yet? Register here!'))
         ],
       ),

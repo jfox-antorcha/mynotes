@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mynotes/constants/routes.dart';
+import 'package:mynotes/services/auth/auth_exceptions.dart';
+import 'package:mynotes/services/auth/auth_service.dart';
+import 'package:mynotes/utils/show_error_dialog.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -53,28 +56,23 @@ class _RegisterViewState extends State<RegisterView> {
                 final email = _email.text;
                 final password = _password.text;
                 try {
-                  final userCredentials = await FirebaseAuth.instance
-                      .createUserWithEmailAndPassword(
-                          email: email, password: password);
-                  print(userCredentials);
-                } on FirebaseAuthException catch (e) {
-                  switch (e.code) {
-                    case 'weak-password':
-                      print('Weak password :-(');
-                      break;
-
-                    case 'email-already-in-use':
-                      print('Oh no, email is already in use!');
-                      break;
-
-                    case 'invalid-email':
-                      print('invalid email');
-                      break;
-
-                    default:
-                      print('something went wrong!!!');
-                      break;
-                  }
+                  await AuthService.firebase().createUser(
+                    email: email,
+                    password: password,
+                  );
+                  // ignore: use_build_context_synchronously
+                  Navigator.of(context).pushNamed(
+                    verifyEmailRoute,
+                  );
+                } on WeekPasswordAuthException {
+                  await showErrorMessage(context, 'Weak password!');
+                } on EmailAlredyInUseAuthException {
+                  await showErrorMessage(
+                      context, 'Oh no, email is already in use!');
+                } on InvalidEmailAuthException {
+                  await showErrorMessage(context, 'Invalid email!');
+                } on GenericAuthException {
+                  await showErrorMessage(context, 'Something went wrong!');
                 }
               },
               child: const Text('Register'),
