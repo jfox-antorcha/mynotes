@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mynotes/services/auth/auth_service.dart';
+import 'package:mynotes/services/crud/notes_service.dart';
 
 enum MenuAction { logout }
 
@@ -11,6 +12,21 @@ class NotesView extends StatefulWidget {
 }
 
 class _NotesViewState extends State<NotesView> {
+  late final NotesService _notesService;
+  String get userEmail => AuthService.firebase().currentUser!.email!;
+
+  @override
+  void initState() {
+    _notesService = NotesService();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _notesService.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,8 +52,28 @@ class _NotesViewState extends State<NotesView> {
             })
           ],
         ),
-        body: const Center(
-          child: Text('body'),
+        body: FutureBuilder(
+          future: _notesService.getOrCreateUser(email: userEmail),
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.done:
+                return StreamBuilder(
+                  stream: _notesService.allNotes,
+                  builder: (context, snapshot) {
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.waiting:
+                        return const Center(
+                          child: Text('Your notes will appear here!'),
+                        );
+                      default:
+                        return const CircularProgressView();
+                    }
+                  },
+                );
+              default:
+                return const CircularProgressView();
+            }
+          },
         ));
   }
 }
@@ -61,4 +97,16 @@ Future<bool> showLogOutDialog(BuildContext context) {
           ],
         );
       }).then((value) => value ?? false);
+}
+
+class CircularProgressView extends StatelessWidget {
+  const CircularProgressView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+        body: Center(
+      child: CircularProgressIndicator(),
+    ));
+  }
 }
