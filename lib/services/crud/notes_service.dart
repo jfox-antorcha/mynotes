@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -10,14 +8,18 @@ import 'package:mynotes/services/crud/notes_exceptions.dart';
 class NotesService {
   Database? _db;
 
-  NotesService._sharedInstance();
+  NotesService._sharedInstance() {
+    _notesStreamController =
+        StreamController<List<DatabaseNote>>.broadcast(onListen: () {
+      _notesStreamController.sink.add(_notes);
+    });
+  }
   static final NotesService _shared = NotesService._sharedInstance();
   factory NotesService() => _shared;
 
   List<DatabaseNote> _notes = [];
 
-  final _notesStreamController =
-      StreamController<List<DatabaseNote>>.broadcast();
+  late final StreamController<List<DatabaseNote>> _notesStreamController;
 
   Stream<List<DatabaseNote>> get allNotes => _notesStreamController.stream;
 
@@ -258,7 +260,7 @@ class DatabaseNote {
 
   @override
   String toString() =>
-      'Person, ID $id, user ID $userId, is Synced with Cloud $isSyncedWithCloud, text $text';
+      'Note, ID = $id, user ID = $userId, is Synced with Cloud = $isSyncedWithCloud, text = $text';
 
   @override
   bool operator ==(covariant DatabaseNote other) => id == other.id;
@@ -272,7 +274,7 @@ const userTable = 'user';
 const noteTable = 'note';
 const idColumn = 'id';
 const emailColumn = 'email';
-const userIdColumn = '"user _id"';
+const userIdColumn = 'user_id';
 const textColumn = 'text';
 const isSyncedWithCloudColumn = 'is_synced_with_cloud';
 const createUserTable = '''CREATE TABLE IF NOT EXISTS "user" (
@@ -282,9 +284,9 @@ const createUserTable = '''CREATE TABLE IF NOT EXISTS "user" (
 );''';
 const createNoteTable = '''CREATE TABLE IF NOT EXISTS "note" (
   "id" INTEGER NOT NULL,
-  "user _id" INTEGER NOT NULL,
+  "user_id" INTEGER NOT NULL,
   "text" TEXT,
   "is_synced_with_cloud" INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY("user _id") REFERENCES "user"("id"),
+  FOREIGN KEY("user_id") REFERENCES "user"("id"),
   PRIMARY KEY("id" AUTOINCREMENT) 
 );''';
