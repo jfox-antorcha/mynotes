@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
@@ -91,7 +92,7 @@ class NotesService {
     _notesStreamController.add(_notes);
   }
 
-  Future<DatabaseNote> createNote({required DatabaseUser owner}) async {
+  Future<DatabaseNote?> createNote({required DatabaseUser owner}) async {
     await _ensureDbOpen();
     final db = _getDatabaseOrThrow();
     final dbUser = await getUser(email: owner.email);
@@ -271,7 +272,7 @@ const userTable = 'user';
 const noteTable = 'note';
 const idColumn = 'id';
 const emailColumn = 'email';
-const userIdColumn = 'user _id';
+const userIdColumn = '"user _id"';
 const textColumn = 'text';
 const isSyncedWithCloudColumn = 'is_synced_with_cloud';
 const createUserTable = '''CREATE TABLE IF NOT EXISTS "user" (
