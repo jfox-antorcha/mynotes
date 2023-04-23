@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mynotes/constants/routes.dart';
 import 'package:mynotes/services/auth/auth_service.dart';
 import 'package:mynotes/services/crud/notes_service.dart';
+import 'package:mynotes/utils/dialogs/show_logout_dialog.dart';
+import 'package:mynotes/view/app/notes_list_view.dart';
 
 enum MenuAction { logout }
 
@@ -66,19 +68,12 @@ class _NotesViewState extends State<NotesView> {
                         if (snapshot.hasData) {
                           final allNotes = snapshot.data as List<DatabaseNote>;
                           if (allNotes.isNotEmpty) {
-                            return ListView.builder(
-                                itemCount: allNotes.length,
-                                itemBuilder: ((context, index) {
-                                  final note = allNotes[index];
-                                  return ListTile(
-                                    title: Text(
-                                      note.text,
-                                      maxLines: 1,
-                                      softWrap: true,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  );
-                                }));
+                            return NotesList(
+                              notes: allNotes,
+                              onDeleteNote: (note) async {
+                                await _notesService.deleteNote(id: note.id);
+                              },
+                            );
                           }
                         }
                         return const Center(
@@ -95,27 +90,6 @@ class _NotesViewState extends State<NotesView> {
           },
         ));
   }
-}
-
-Future<bool> showLogOutDialog(BuildContext context) {
-  return showDialog<bool>(
-      context: context,
-      builder: (content) {
-        return AlertDialog(
-          title: const Text('Log Out'),
-          content: const Text('Are you sure you want to log out?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(content).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(content).pop(true),
-              child: const Text('Yes'),
-            ),
-          ],
-        );
-      }).then((value) => value ?? false);
 }
 
 class CircularProgressView extends StatelessWidget {

@@ -21,6 +21,7 @@ void main() {
       notesRoute: (context) => const NotesView(),
       newNoteRoute: (context) => const NewNoteView(),
     },
+    debugShowCheckedModeBanner: false,
   ));
 }
 
