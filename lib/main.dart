@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mynotes/constants/routes.dart';
-import 'package:mynotes/services/auth/auth_service.dart';
+import 'package:mynotes/services/auth/bloc/auth_bloc.dart';
+import 'package:mynotes/services/auth/bloc/auth_events.dart';
+import 'package:mynotes/services/auth/bloc/auth_state.dart';
+import 'package:mynotes/services/auth/firebase_auth_provider.dart';
 import 'package:mynotes/view/app/create_update_note_view.dart';
 import 'package:mynotes/view/app/notes_main.dart';
 import 'package:mynotes/view/auth/register.dart';
@@ -13,7 +17,10 @@ void main() {
     theme: ThemeData(
       primarySwatch: Colors.cyan,
     ),
-    home: const HomePage(),
+    home: BlocProvider<AuthBloc>(
+      create: (context) => AuthBloc(FirebaseAuthProvider()),
+      child: const HomePage(),
+    ),
     routes: {
       loginRoute: (context) => const LoginView(),
       registerRoute: (context) => const RegisterView(),
@@ -30,18 +37,13 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: AuthService.firebase().initialize(),
-      builder: (context, snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.done:
-            final user = AuthService.firebase().currentUser;
-            if (user == null) return const LoginView();
-            if (!user.isEmailVerified) return const VerifyEmailView();
-            return const NotesView();
-          default:
-            return const CircularProgressView();
-        }
+    context.read<AuthBloc>().add(const AuthEventInitialize());
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state is AuthStateLoggedIn) return const NotesView();
+        if (state is AuthStateNeedsVerification) return const VerifyEmailView();
+        if (state is AuthStateLoggedOut) return const LoginView();
+        return const CircularProgressView();
       },
     );
   }
