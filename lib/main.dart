@@ -22,10 +22,6 @@ void main() {
       child: const HomePage(),
     ),
     routes: {
-      loginRoute: (context) => const LoginView(),
-      registerRoute: (context) => const RegisterView(),
-      verifyEmailRoute: (context) => const VerifyEmailView(),
-      notesRoute: (context) => const NotesView(),
       createUpdateNoteRoute: (context) => const CreateUpdateNoteView(),
     },
     debugShowCheckedModeBanner: false,
@@ -42,8 +38,12 @@ class HomePage extends StatelessWidget {
       builder: (context, state) {
         if (state is AuthStateLoggedIn) return const NotesView();
         if (state is AuthStateNeedsVerification) return const VerifyEmailView();
-        if (state is AuthStateLoggedOut) return const LoginView();
-        return const CircularProgressView();
+        if (state is AuthStateRegistering) return const RegisterView();
+        if (state is AuthStateLoggedOut) {
+          if (state.isLoading) return const CircularProgressView();
+          return const LoginView();
+        }
+        return const LoginView();
       },
     );
   }
